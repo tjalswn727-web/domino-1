@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>행동 도미노</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: 상단 탭(활동 1·활동 2·교사용). 두꺼운 외곽선과 눌리는 그림자로 만화 느낌을 유지한다. */
+:root{
+  --bg:#fff7e6; --surface:#ffffff; --ink:#3b2a22; --muted:#7a6558;
+  --brand:#3b4cca; --brand-ink:#ffffff;
+  --bad:#e03131; --on-bad:#ffffff; --bad-soft:#fdeaea;
+  --good:#2f9e44; --on-good:#ffffff; --good-soft:#e6f6ea;
+  --sun:#ffd43b; --sun-soft:#fff3bf; --idle:#d9d1c7; --skin:#ffe3c4;
+  --f-display:'Jua','Noto Sans KR',sans-serif; --f-body:'Noto Sans KR',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1f1a17; --surface:#2c2521; --ink:#f6ebe0; --muted:#bba99b;
+    --brand:#8c9bff; --brand-ink:#14163a;
+    --bad:#ff6b6b; --on-bad:#2a0f10; --bad-soft:#3d2224;
+    --good:#51cf66; --on-good:#0f2414; --good-soft:#1f3526;
+    --sun:#ffd43b; --sun-soft:#3d3519; --idle:#4a403a; --skin:#ffe3c4; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1f1a17; --surface:#2c2521; --ink:#f6ebe0; --muted:#bba99b;
+  --brand:#8c9bff; --brand-ink:#14163a;
+  --bad:#ff6b6b; --on-bad:#2a0f10; --bad-soft:#3d2224;
+  --good:#51cf66; --on-good:#0f2414; --good-soft:#1f3526;
+  --sun:#ffd43b; --sun-soft:#3d3519; --idle:#4a403a; --skin:#ffe3c4; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.tx,.cap,.situation,.quote,.say,.verdict,.compare .two div,.decact,.hbub span{word-break:keep-all;overflow-wrap:anywhere}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;
+  padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:4px solid var(--brand);outline-offset:3px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{display:flex;gap:4px;align-items:flex-end}
+.logo i{display:block;width:16px;border:3px solid var(--ink);border-radius:5px;background:var(--surface)}
+.logo i:nth-child(1){height:34px;background:var(--bad)}
+.logo i:nth-child(2){height:34px;background:var(--sun);transform:rotate(12deg);transform-origin:100% 100%}
+.logo i:nth-child(3){height:34px;background:var(--good);transform:rotate(26deg);transform-origin:100% 100%;margin-left:6px}
+h1{font-family:var(--f-display);font-weight:400;font-size:34px;margin:0;line-height:1.1}
+.help{margin-left:auto}
+.tabs{display:flex;gap:10px;flex-wrap:wrap}
+.tab{flex:1 1 200px;border:3px solid var(--ink);background:var(--surface);border-radius:16px;padding:10px 16px;text-align:left;box-shadow:0 4px 0 var(--ink);min-width:0}
+.tab small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.tab b{font-family:var(--f-display);font-weight:400;font-size:21px;line-height:1.2}
+.tab[aria-selected="true"]{background:var(--sun);color:#3b2a22}
+.tab[aria-selected="true"] small{color:#5d4a3d}
+.tab.admin{flex:0 1 150px}
+.tab:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+h2{font-family:var(--f-display);font-weight:400;font-size:28px;margin:0}
+.panel{display:flex;flex-direction:column;gap:16px}
+.box{background:var(--surface);border:3px solid var(--ink);border-radius:20px;padding:18px;box-shadow:0 5px 0 var(--ink);min-width:0}
+.btn{border:3px solid var(--ink);background:var(--brand);color:var(--brand-ink);border-radius:16px;padding:12px 20px;font-family:var(--f-display);font-size:22px;box-shadow:0 4px 0 var(--ink);line-height:1.2}
+.btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.alt{background:var(--surface);color:var(--ink)}
+.btn.gray{background:var(--idle);color:var(--ink)}
+.btn.small{font-size:17px;padding:7px 14px;border-radius:12px;box-shadow:0 3px 0 var(--ink)}
+.btn.big{width:100%;font-size:26px;padding:16px}
+.badge{display:inline-block;background:var(--sun);color:#3b2a22;border:3px solid var(--ink);border-radius:999px;padding:0 12px;font-weight:900;font-size:14px}
+.stepchip{display:inline-block;font-family:var(--f-display);font-size:23px;background:var(--sun);color:#3b2a22;border:3px solid var(--ink);border-radius:12px;padding:0 14px;line-height:1.5}
+.sechead{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.situation{font-family:var(--f-display);font-size:30px;line-height:1.3;margin:8px 0 0;text-wrap:balance}
+.hint{color:var(--muted);font-weight:700;font-size:15px;margin:0}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.choices{grid-template-columns:1fr}}
+.choice{display:flex;gap:12px;align-items:center;text-align:left;border:3px solid var(--ink);border-radius:18px;background:var(--surface);padding:12px 14px;box-shadow:0 4px 0 var(--ink);min-width:0}
+.choice .ab{flex:none;width:44px;height:44px;border-radius:50%;border:3px solid var(--ink);background:var(--sun);color:#3b2a22;display:grid;place-items:center;font-family:var(--f-display);font-size:24px}
+.choice .tx{font-weight:900;font-size:19px;line-height:1.35}
+.choice.sel{background:var(--sun-soft)}
+.choice.seen .ab{color:transparent;position:relative}
+.choice.seen .ab::after{content:"✓";position:absolute;color:#3b2a22;left:50%;top:50%;transform:translate(-50%,-52%)}
+.choice:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+/* domino row */
+.row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding-top:6px}
+@media (max-width:640px){.row{grid-template-columns:repeat(2,1fr)}}
+.tw{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.tw:not(:last-child)::after{content:"▶";position:absolute;right:-13px;top:58px;font-size:14px;color:var(--muted)}
+@media (max-width:640px){.tw:nth-child(2n)::after{display:none}}
+.tb{margin-top:14px;width:min(100%,104px);transform-origin:100% 100%;transition:transform .6s cubic-bezier(.3,1.5,.5,1)}
+.tb svg{display:block;width:100%;height:auto;overflow:visible}
+/* bad: 쓰러진다 / good: 누워 있다가 하나씩 바로 선다 */
+.row[data-mode="bad"] .tw.on .tb{transform:rotate(34deg)}
+.row[data-mode="good"] .tb{transform-origin:50% 100%;transform:perspective(420px) rotateX(80deg)}
+.row[data-mode="good"] .tw.on .tb{transform:perspective(420px) rotateX(0deg)}
+.t-rect{fill:var(--surface);stroke:var(--ink);stroke-width:4}
+.t-mid{stroke:var(--ink);stroke-width:3}
+.tw.bad .t-rect{fill:var(--bad-soft);stroke:var(--bad)}
+.tw.good .t-rect{fill:var(--good-soft);stroke:var(--good)}
+.tw.idle .t-rect{fill:var(--idle);stroke:var(--muted)}
+.tw.bad .t-mid{stroke:var(--bad)} .tw.good .t-mid{stroke:var(--good)} .tw.idle .t-mid{stroke:var(--muted)}
+.pip{fill:var(--ink)} .tw.bad .pip{fill:var(--bad)} .tw.good .pip{fill:var(--good)} .tw.idle .pip{fill:var(--muted)}
+.skin{fill:var(--skin);stroke:#3b2a22;stroke-width:2.5}
+.fk{stroke:#3b2a22;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ff{fill:#3b2a22}
+.fw{fill:#fff;stroke:#3b2a22;stroke-width:2}
+.cheek{fill:#ff9aa2;opacity:.8}
+.cap{font-weight:900;font-size:16px;line-height:1.35;text-align:center;opacity:0;transform:translateY(6px);transition:opacity .4s .25s,transform .4s .25s;text-wrap:balance;min-height:3.9em}
+.on .cap,.tw.first .cap{opacity:1;transform:none}
+.tw.idle .cap{opacity:0}
+.lab{font-size:13px;font-weight:900;color:var(--muted);letter-spacing:.02em}
+.row.compact{gap:8px;padding-right:10px}
+.row.compact[data-mode="bad"] .tw.on .tb{transform:rotate(26deg)}
+.row.compact .cap{font-size:14px}
+.row.compact .tb{width:min(100%,76px);margin-top:10px}
+.row.compact .tw:not(:last-child)::after{right:-9px;top:42px;font-size:11px}
+.verdict{border:3px solid var(--ink);border-radius:18px;padding:12px 16px;font-family:var(--f-display);font-size:24px;text-align:center}
+.verdict.bad{background:var(--bad-soft);color:var(--bad)} .verdict.good{background:var(--good-soft);color:var(--good)}
+.compact-v .verdict,.dec .verdict{font-size:20px;padding:9px 12px}
+.compare{background:var(--sun-soft)}
+.compare .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+@media (max-width:640px){.compare .two{grid-template-columns:1fr}}
+.compare .two div{border:3px solid var(--ink);border-radius:14px;padding:10px 12px;background:var(--surface);font-weight:700}
+.compare .two b{display:block;font-family:var(--f-display);font-weight:400;font-size:19px}
+.compare .bad b{color:var(--bad)} .compare .good b{color:var(--good)}
+/* activity 2 */
+.decs{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+@media (max-width:900px){.decs{grid-template-columns:1fr}}
+.dec{border:3px solid var(--ink);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.dec.bad{background:var(--bad-soft)} .dec.good{background:var(--good-soft)}
+.decbtn{border:3px solid var(--ink);border-radius:14px;padding:10px 14px;font-family:var(--f-display);font-size:22px;box-shadow:0 4px 0 var(--ink);line-height:1.25}
+.dec.bad .decbtn{background:var(--bad);color:var(--on-bad)}
+.dec.good .decbtn{background:var(--good);color:var(--on-good)}
+.decbtn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.decact{font-weight:900;font-size:19px;line-height:1.5}
+.decact .blank{display:inline-block;min-width:7em;border-bottom:3px solid var(--ink)}
+.decact .ex{display:inline;border-bottom:3px solid var(--ink)}
+.dec.bad .decact .ex{color:var(--bad)} .dec.good .decact .ex{color:var(--good)}
+.stack{display:flex;flex-direction:column;gap:12px;min-width:0}
+.role{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role div{border:3px solid var(--ink);border-radius:16px;padding:10px;text-align:center;background:var(--good-soft);min-height:84px}
+.role div:nth-child(2){background:var(--sun-soft)}
+.role small{display:block;font-weight:900;color:var(--muted);font-size:13px}
+.role b{font-family:var(--f-display);font-weight:400;font-size:28px;word-break:keep-all}
+.rpbtns{display:flex;gap:10px;flex-wrap:wrap}
+.count{font-family:var(--f-display);font-size:64px;line-height:1;text-align:center;color:var(--good)}
+.count.gray{color:var(--muted)}
+/* admin */
+textarea,input[type=text],input[type=number]{width:100%;border:3px solid var(--ink);border-radius:12px;background:var(--surface);padding:8px 12px}
+textarea{min-height:92px;resize:vertical}
+label{font-weight:900;font-size:15px;display:block;margin-bottom:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.list li{display:flex;gap:10px;align-items:center;border:3px solid var(--ink);border-radius:14px;padding:8px 12px;background:var(--surface)}
+.list li span{flex:1;min-width:0;font-weight:700}
+.list input[type=checkbox]{width:24px;height:24px;accent-color:var(--good)}
+.tag{font-size:12px;font-weight:900;background:var(--sun);color:#3b2a22;border:2px solid var(--ink);border-radius:999px;padding:0 8px}
+.err{color:var(--bad);font-weight:900;margin:0}
+/* modal + toast */
+.veil{position:fixed;inset:0;background:rgba(30,20,15,.6);display:grid;place-items:center;padding:20px;z-index:50;overflow:auto}
+.modal{max-width:460px;width:100%;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.modal.wide{max-width:560px}
+.modal .logo{transform:scale(1.4);margin:10px 0 6px}
+.modal p{margin:0;font-weight:700;font-size:19px}
+.modal p em{font-style:normal;background:var(--sun);color:#3b2a22;border-radius:6px;padding:0 4px}
+.rules{display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
+.rules div{display:flex;gap:12px;align-items:center;border:3px solid var(--ink);border-radius:14px;padding:8px 12px;background:var(--surface);font-weight:900;font-size:18px}
+.chip{flex:none;min-width:92px;text-align:center;border:3px solid var(--ink);border-radius:999px;padding:0 10px;font-family:var(--f-display);font-weight:400;font-size:19px;color:var(--ink)}
+.chip.c1{background:var(--idle)} .chip.c2{background:var(--sun);color:#3b2a22} .chip.c3{background:var(--good);color:var(--on-good)}
+.hscript{display:flex;flex-direction:column;gap:10px;width:100%;text-align:left}
+.hbub{display:flex;flex-direction:column;gap:3px;max-width:86%}
+.hbub small{font-weight:900;font-size:14px;color:var(--muted)}
+.hbub span{border:3px solid var(--ink);border-radius:18px;padding:10px 14px;font-weight:900;font-size:20px;line-height:1.4;background:var(--good-soft)}
+.hbub.r2{align-self:flex-end;text-align:right}
+.hbub.r2 span{background:var(--sun-soft)}
+.hbub.r0 span{background:var(--idle);border-style:dashed;color:var(--ink)}
+.pbub{text-align:left;border:3px dashed var(--ink);border-radius:18px;padding:10px 14px;font-weight:900;font-size:20px;line-height:1.4;background:var(--idle);color:var(--ink);box-shadow:0 4px 0 var(--ink)}
+.pbub:disabled{cursor:default;box-shadow:none;opacity:1}
+.pbub.num{font-family:var(--f-display);font-weight:400;font-size:40px;line-height:1.1;min-width:5.5em;text-align:center}
+.in{animation:pop .35s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.in{animation:none}}
+.stagebox{width:100%;border:3px solid var(--ink);border-radius:14px;background:var(--sun-soft);padding:8px 14px;text-align:center;font-weight:900;font-size:18px;line-height:1.5}
+.stagebox small{display:block;font-size:13px;color:var(--muted);font-weight:900}
+.tip{width:100%;text-align:left;border:3px dashed var(--ink);border-radius:14px;padding:8px 12px;font-weight:700;font-size:16px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 20px;font-weight:900;z-index:60;max-width:90vw;text-align:center}
+@media (prefers-reduced-motion: reduce){.tb,.cap{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="logo" aria-hidden="true"><i></i><i></i><i></i></div>
+    <h1>행동 도미노</h1>
+    <button class="btn alt small help" id="helpBtn" type="button">안내 보기</button>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="활동 선택">
+    <button class="tab" role="tab" id="tab-a1" aria-selected="true" aria-controls="p-a1" data-tab="a1"><small>활동 1</small><b>행동 도미노로 결과 연결하기</b></button>
+    <button class="tab" role="tab" id="tab-a2" aria-selected="false" aria-controls="p-a2" data-tab="a2"><small>활동 2</small><b>행동 도미노 역할극 하기</b></button>
+    <button class="tab admin" role="tab" id="tab-ad" aria-selected="false" aria-controls="p-ad" data-tab="ad"><small>교사용</small><b>상황 관리</b></button>
+  </nav>
+
+  <!-- 활동 1 -->
+  <section class="panel" id="p-a1" role="tabpanel" aria-labelledby="tab-a1">
+    <h2>활동 1. 행동 도미노로 결과 연결하기</h2>
+    <button class="btn big" id="draw1" type="button">상황 도미노 카드 뽑기</button>
+    <div class="box" id="card1" hidden>
+      <span class="badge">상황 발생</span>
+      <p class="situation" id="sit1"></p>
+      <p class="hint" style="margin-top:10px">어떤 선택을 할까요? 두 가지 행동을 모두 눌러 보고 비교해요.</p>
+      <div class="choices" id="choices1" style="margin-top:10px"></div>
+    </div>
+    <div class="box" id="stage1" hidden>
+      <div class="lab" id="stageLab1">도미노가 이어져요</div>
+      <div class="row" id="row1" aria-live="polite"></div>
+      <div id="verdict1" style="margin-top:14px"></div>
+    </div>
+    <div class="box compare" id="compare1" hidden>
+      <span class="badge">비교해 봐요</span>
+      <p class="situation" style="font-size:24px">같은 상황인데 왜 결과가 달라졌을까요?</p>
+      <div class="two" id="two1"></div>
+    </div>
+  </section>
+
+  <!-- 활동 2 -->
+  <section class="panel" id="p-a2" role="tabpanel" aria-labelledby="tab-a2" hidden>
+    <h2>활동 2. 행동 도미노 역할극 하기</h2>
+    <button class="btn big" id="draw2" type="button">역할극 갈등 상황 뽑기</button>
+    <div class="box" id="card2">
+      <span class="badge">상황 발생</span>
+      <p class="situation" id="sit2" style="color:var(--muted)">버튼을 눌러 상황을 뽑아요.</p>
+    </div>
+
+    <div class="box" id="ex2" hidden>
+      <div class="sechead"><span class="stepchip">예상하기</span><p class="hint">두 가지 결정을 눌러 보고, 어떤 결과가 올지 예상해요.</p></div>
+      <div class="decs" id="decs"></div>
+    </div>
+
+    <div class="box" id="rp2" hidden>
+      <div class="sechead"><span class="stepchip">역할극 하기</span><p class="hint">멈추기와 행동하기를 친구들과 연습해요.</p></div>
+      <button class="btn big" id="rpOpen" type="button">역할극 하기</button>
+      <div class="stack" id="rpPanel" hidden>
+        <button class="btn" id="actors" type="button">배우 등장!</button>
+        <div class="role" id="role" aria-live="polite">
+          <div><small>역할 1 · 행동하는 친구</small><b id="r1">?</b></div>
+          <div><small>역할 2 · 상대 친구</small><b id="r2">?</b></div>
+        </div>
+        <p class="hint">이름은 '상황 관리' 탭에서 넣을 수 있어요. 비워 두면 번호로 뽑아요.</p>
+        <div class="rpbtns">
+          <button class="btn alt" id="hintBtn" type="button" disabled>역할극 힌트 보기</button>
+          <button class="btn" id="endRP" type="button" disabled>역할극 끝!</button>
+          <button class="btn alt" id="again" type="button" hidden>다시 해 보기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="box compare" id="aud" hidden>
+      <span class="badge">관객 친구에게 질문</span>
+      <p class="situation" id="audQ" style="font-size:26px" aria-live="polite"></p>
+      <div style="margin-top:10px"><button class="btn alt small" id="audNext" type="button">다른 질문</button></div>
+    </div>
+  </section>
+
+  <!-- 상황 관리 -->
+  <section class="panel" id="p-ad" role="tabpanel" aria-labelledby="tab-ad" hidden>
+    <h2>상황 관리</h2>
+    <div class="box stack">
+      <b style="font-family:var(--f-display);font-weight:400;font-size:22px">역할극 학생 이름</b>
+      <label for="names">한 줄에 한 명씩 적어요. 이 기기에만 저장돼요.</label>
+      <textarea id="names" placeholder="예) 민수&#10;서연&#10;지호"></textarea>
+      <div class="grid2">
+        <div><label for="num">이름이 비었을 때 뽑을 번호 (1부터 몇 번까지)</label><input type="number" id="num" min="2" max="40" value="10"></div>
+      </div>
+    </div>
+    <div class="box stack">
+      <b style="font-family:var(--f-display);font-weight:400;font-size:22px">상황 목록 <small id="cnt" style="font-family:var(--f-body);font-size:15px;color:var(--muted)"></small></b>
+      <p class="hint">체크한 상황만 뽑기에 나와요. 필요 없는 상황은 삭제할 수 있어요.</p>
+      <div class="rpbtns">
+        <button class="btn alt small" id="allOn" type="button">모두 사용</button>
+        <button class="btn alt small" id="allOff" type="button">모두 해제</button>
+        <button class="btn alt small" id="restore" type="button" hidden>삭제한 기본 상황 되살리기</button>
+      </div>
+      <ul class="list" id="list"></ul>
+    </div>
+    <form class="box stack" id="addForm" novalidate>
+      <b style="font-family:var(--f-display);font-weight:400;font-size:22px">새 상황 추가</b>
+      <div><label for="f-q">상황</label><input type="text" id="f-q" placeholder="예) 복도에서 친구와 부딪혔어요"></div>
+      <div class="grid2">
+        <div class="stack">
+          <b style="color:var(--bad)">나만 생각한 결정 (도미노가 와르르)</b>
+          <div><label for="f-ba">행동</label><input type="text" id="f-ba" placeholder="예) 째려보며 지나간다"></div>
+          <div><label for="f-b1">도미노 1</label><input type="text" id="f-b1"></div>
+          <div><label for="f-b2">도미노 2</label><input type="text" id="f-b2"></div>
+          <div><label for="f-b3">도미노 3 (결과)</label><input type="text" id="f-b3"></div>
+        </div>
+        <div class="stack">
+          <b style="color:var(--good)">모두를 생각한 책임 있는 결정 (도미노가 차곡차곡)</b>
+          <div><label for="f-ga">행동</label><input type="text" id="f-ga" placeholder="예) “미안해, 괜찮아?” 하고 말한다"></div>
+          <div><label for="f-g1">도미노 1</label><input type="text" id="f-g1"></div>
+          <div><label for="f-g2">도미노 2</label><input type="text" id="f-g2"></div>
+          <div><label for="f-g3">도미노 3 (결과)</label><input type="text" id="f-g3"></div>
+        </div>
+      </div>
+      <div class="stack">
+        <b>역할극 대본 (선택)</b>
+        <p class="hint">비워 두면 기본 대본이 나와요. 대사 세 칸을 모두 쓰면 힌트 창에 나와요.</p>
+        <div><label for="f-st">행동 안내</label><input type="text" id="f-st" placeholder="예) 강민이 자리에 앉아 있어요. 다솜이 다가가요."></div>
+        <div><label for="f-s1">상대 친구가 먼저 하는 말</label><input type="text" id="f-s1"></div>
+        <div><label for="f-s2">행동하는 친구가 하는 말</label><input type="text" id="f-s2"></div>
+        <div><label for="f-s3">상대 친구의 대답</label><input type="text" id="f-s3"></div>
+      </div>
+      <p class="err" id="formErr" role="alert" hidden>빈칸을 모두 채워 주세요.</p>
+      <div><button class="btn" type="submit">상황 추가하기</button></div>
+    </form>
+  </section>
+</div>
+
+<!-- 활동 1 안내 -->
+<div class="veil" id="veil1" role="dialog" aria-modal="true" aria-labelledby="mt1" hidden>
+  <div class="box modal">
+    <div class="logo" aria-hidden="true"><i></i><i></i><i></i></div>
+    <b id="mt1" style="font-family:var(--f-display);font-weight:400;font-size:30px">행동 도미노</b>
+    <p>나의 작은 <em>행동 하나</em>가 도미노처럼 쓰러져 어떤 결과를 만들까요?</p>
+    <p>상황을 보고 책임 있는 행동을 연습해봐요!</p>
+    <button class="btn big" id="start1" type="button">시작하기</button>
+  </div>
+</div>
+<!-- 활동 2 안내 -->
+<div class="veil" id="veil2" role="dialog" aria-modal="true" aria-labelledby="mt2" hidden>
+  <div class="box modal">
+    <b id="mt2" style="font-family:var(--f-display);font-weight:400;font-size:30px">행동 도미노 역할극</b>
+    <p>갈등 상황에서 행동하기 전에는</p>
+    <div class="rules">
+      <div><span class="chip c1">멈추기</span><span>잠시 멈추고</span></div>
+      <div><span class="chip c2">예상하기</span><span>내 행동의 결과를 예상해보고</span></div>
+      <div><span class="chip c3">행동하기</span><span>모두에게 이로운 책임있는 행동을 해야해요</span></div>
+    </div>
+    <p style="font-family:var(--f-display);font-weight:400;font-size:26px">같이 연습해볼까요?</p>
+    <button class="btn big" id="start2" type="button">같이 연습해요!</button>
+  </div>
+</div>
+<!-- 역할극 힌트 -->
+<div class="veil" id="hveil" role="dialog" aria-modal="true" aria-labelledby="ht" hidden>
+  <div class="box modal wide">
+    <b id="ht" style="font-family:var(--f-display);font-weight:400;font-size:28px">역할극 힌트</b>
+    <p id="hsit" style="font-size:17px;color:var(--muted)">이렇게 말해 볼까요? 따라 해도 되고, 내 말로 바꿔도 좋아요.</p>
+    <div class="hscript" id="hbody" aria-live="polite"></div>
+    <button class="btn alt" id="hclose" type="button">닫기</button>
+  </div>
+</div>
+<div id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+'use strict';
+/* ---------- 데이터 ---------- */
+const BASE=[
+{id:'b1',q:'쉬는 시간에 친구의 게임기가 너무 하고 싶어요',
+ bad:{act:'몰래 가져간다',chain:[['shock','친구가 게임기가 없어진 걸 알아요'],['angry','잃어버린 줄 알고 화가 나요'],['sad','교실 분위기가 나빠져요']]},
+ good:{act:'“같이 해도 돼?” 하고 물어본다',chain:[['smile','친구가 기분 좋게 대답해요'],['happy','같이 게임을 해요'],['happy','사이가 좋아지고 교실이 즐거워요']]}},
+{id:'b2',q:'청소 구역으로 힘든 화장실 청소를 맡게 되었어요',
+ bad:{act:'도구를 던지고 도망친다',chain:[['shock','모둠 친구들이 놀라요'],['angry','남은 청소를 힘들게 해요'],['sad','서로 화가 나서 분위기가 나빠져요']]},
+ good:{act:'열심히 하고 “다음엔 바꾸자” 하고 부탁한다',chain:[['smile','모둠 친구들이 고마워해요'],['happy','서로 도와 청소를 끝내요'],['happy','칭찬받고 뿌듯해요']]}},
+{id:'b3',q:'급식 줄이 길어서 빨리 먹고 싶어요',
+ bad:{act:'새치기를 한다',chain:[['shock','뒤에 선 친구가 깜짝 놀라요'],['angry','“새치기하지 마!” 다툼이 생겨요'],['sad','선생님께 불려 가고 기분이 나빠요']]},
+ good:{act:'내 차례를 기다린다',chain:[['smile','친구들과 이야기하며 기다려요'],['happy','차례가 되어 맛있게 받아요'],['happy','질서 있는 즐거운 급식 시간이에요']]}},
+{id:'b4',q:'친구가 내 연필을 말없이 가져갔어요',
+ bad:{act:'소리를 지르며 확 빼앗는다',chain:[['shock','친구가 깜짝 놀라요'],['angry','친구도 화가 나서 맞서요'],['sad','둘 다 기분이 상해요']]},
+ good:{act:'“내 거야, 돌려줘” 하고 말한다',chain:[['smile','친구가 “미안해” 하고 돌려줘요'],['happy','다음엔 먼저 물어봐 줘요'],['happy','서로 믿는 사이가 돼요']]}},
+{id:'b5',q:'놀이를 하다가 내가 져서 속상해요',
+ bad:{act:'게임판을 엎어 버린다',chain:[['shock','놀이가 갑자기 멈춰요'],['angry','친구들이 화를 내요'],['sad','같이 놀 친구가 줄어들어요']]},
+ good:{act:'“한 번 더 하자” 하고 말한다',chain:[['smile','친구들이 “좋아!” 해요'],['happy','다시 신나게 놀아요'],['happy','져도 이겨도 즐거운 놀이가 돼요']]}},
+{id:'b6',q:'친구가 실수로 내 물통을 쏟았어요',
+ bad:{act:'친구를 밀치며 화를 낸다',chain:[['sad','친구가 겁이 나고 속상해요'],['angry','친구도 화가 나서 다퉈요'],['worry','선생님이 오시고 모두 불편해요']]},
+ good:{act:'“괜찮아, 같이 닦자” 하고 말한다',chain:[['smile','친구가 “미안해” 하고 안심해요'],['happy','함께 물을 닦아요'],['happy','서로 더 친해져요']]}},
+{id:'b7',q:'수업 시간에 내가 먼저 말하고 싶어요',
+ bad:{act:'큰 소리로 끼어든다',chain:[['shock','발표하던 친구가 깜짝 놀라요'],['sad','친구가 속상해서 말을 멈춰요'],['worry','수업이 방해되어 모두 불편해요']]},
+ good:{act:'손을 들고 차례를 기다린다',chain:[['smile','선생님이 알아봐 주세요'],['happy','내 차례에 마음껏 말해요'],['happy','서로 존중하는 수업이 돼요']]}},
+{id:'b8',q:'복도에서 친구와 부딪혔어요',
+ bad:{act:'째려보며 “야!” 하고 소리친다',chain:[['shock','친구가 깜짝 놀라요'],['angry','친구도 화가 나서 맞받아쳐요'],['sad','둘 다 기분이 나빠져요']]},
+ good:{act:'“괜찮아?” 하고 먼저 물어본다',chain:[['smile','친구가 안심해요'],['happy','서로 “미안해” 하고 웃어요'],['happy','복도가 따뜻해져요']]}},
+{id:'b9',q:'쉬는 시간에 친구들이 하는 놀이에 나도 끼고 싶어요',
+ bad:{act:'놀이를 방해하고 물건을 빼앗는다',chain:[['shock','친구들이 놀라요'],['angry','놀이가 멈추고 화를 내요'],['sad','같이 놀기 어려워져요']]},
+ good:{act:'“나도 같이 해도 돼?” 하고 물어본다',chain:[['smile','친구들이 쳐다봐요'],['happy','“좋아, 같이 하자!” 해요'],['happy','함께 놀아서 즐거워요']]}},
+{id:'b10',q:'내 자리에 다른 친구가 앉아 있어요',
+ bad:{act:'의자를 확 당겨서 일어나게 한다',chain:[['shock','친구가 깜짝 놀라요'],['angry','친구가 화를 내요'],['worry','주변 친구들이 불편해해요']]},
+ good:{act:'“여기 내 자리야, 비켜 줄래?” 하고 말한다',chain:[['smile','친구가 “아, 미안!” 해요'],['happy','자리를 바꿔 줘요'],['happy','기분 좋게 수업을 시작해요']]}},
+{id:'b11',q:'모둠 활동에서 내 의견이 뽑히지 않았어요',
+ bad:{act:'화를 내며 활동을 그만둔다',chain:[['angry','모둠 친구들이 당황해요'],['sad','활동이 멈춰요'],['worry','우리 모둠만 늦어져요']]},
+ good:{act:'“다음엔 내 의견도 들어줄래?” 하고 함께 한다',chain:[['smile','친구들이 고개를 끄덕여요'],['happy','서로 의견을 들어 줘요'],['happy','멋진 결과물이 나와요']]}},
+{id:'b12',q:'친구가 빌려 간 내 지우개를 돌려주지 않아요',
+ bad:{act:'친구 가방을 몰래 뒤진다',chain:[['shock','친구가 알고 깜짝 놀라요'],['angry','“왜 내 가방을 봐!” 다퉈요'],['sad','서로 믿지 못하게 돼요']]},
+ good:{act:'“내 지우개 돌려줄래?” 하고 말한다',chain:[['smile','친구가 “아 맞다!” 해요'],['happy','지우개를 돌려줘요'],['happy','서로 믿는 사이가 돼요']]}},
+{id:'b13',q:'급식을 먹다가 실수로 친구 식판을 엎었어요',
+ bad:{act:'모른 척하고 자리를 떠난다',chain:[['worry','친구가 식판을 보고 놀라요'],['angry','누가 그랬는지 찾으며 화를 내요'],['sad','나는 불안하고 마음이 무거워요']]},
+ good:{act:'“미안해, 같이 치우자” 하고 말한다',chain:[['smile','친구가 “괜찮아” 하고 말해요'],['happy','같이 깨끗이 치워요'],['happy','마음이 가벼워지고 사이가 좋아요']]}},
+{id:'b14',q:'체육 시간에 우리 팀이 져서 속상해요',
+ bad:{act:'친구 탓을 하며 화를 낸다',chain:[['angry','친구가 속상해해요'],['sad','팀 분위기가 가라앉아요'],['worry','다음 경기도 하기 싫어져요']]},
+ good:{act:'“수고했어, 다음엔 같이 잘해 보자” 하고 말한다',chain:[['smile','친구가 힘을 얻어요'],['happy','팀이 다시 힘을 내요'],['happy','져도 즐거운 체육 시간이 돼요']]}},
+{id:'b15',q:'친구가 내 별명을 놀리며 불러요',
+ bad:{act:'같이 놀리며 더 크게 소리친다',chain:[['shock','다른 친구들도 쳐다봐요'],['angry','놀림이 점점 커져요'],['sad','모두 기분이 나빠져요']]},
+ good:{act:'“그 말은 싫어, 그만해 줄래?” 하고 말한다',chain:[['smile','친구가 멈칫해요'],['happy','“미안해” 하고 사과해요'],['happy','서로 존중하는 사이가 돼요']]}},
+{id:'b16',q:'교실 바닥에 쓰레기가 떨어져 있어요. 내가 버린 게 아니에요',
+ bad:{act:'못 본 척 지나간다',chain:[['worry','쓰레기가 그대로 있어요'],['sad','다른 친구가 밟고 미끄러져요'],['angry','교실이 더러워져 불편해요']]},
+ good:{act:'쓰레기를 주워 쓰레기통에 버린다',chain:[['smile','친구들이 지켜봐요'],['happy','교실이 깨끗해져요'],['happy','칭찬받고 모두 기분이 좋아요']]}},
+{id:'b17',q:'점심시간에 혼자 앉아 있는 친구가 있어요',
+ bad:{act:'못 본 척하고 지나간다',chain:[['sad','친구가 외로워해요'],['worry','친구가 말을 하지 않게 돼요'],['sad','학급 분위기가 쓸쓸해져요']]},
+ good:{act:'“같이 먹을래?” 하고 말한다',chain:[['smile','친구가 깜짝 놀라며 웃어요'],['happy','같이 앉아서 이야기해요'],['happy','새로운 친구가 생겨요']]}}
+];
+/* 역할극 대본: [누가(1=행동하는 친구, 2=상대 친구), 대사]. 잠시 멈춤 말풍선은 자동으로 들어간다 */
+const PAUSE='잠시 멈춤 (결과를 예상하기)';
+const HINTS={
+ b1:{st:'{2:이} 쉬는 시간에 게임기를 하고 있어요. {1:이} 옆으로 다가가요.',s:[[2,'와, 이 판 진짜 재밌다!'],[1,'나도 게임기 하고 싶은데, 같이 해도 돼?'],[2,'좋아! 이리 와서 같이 하자!']],tip:'부드러운 목소리로 물어보고, 대답을 기다려요.'},
+ b2:{st:'청소 구역을 정하는 시간이에요. {1:은} 힘든 화장실 청소를 맡게 되었어요.',s:[[2,'이번 주 청소 구역표 나왔어. 너는 화장실이야.'],[1,'조금 힘들겠지만 열심히 할게. 다음엔 바꿔서 하자.'],[2,'그래, 다음엔 바꿔서 하자!']],tip:'도망치지 않고 웃으며 말해요.'},
+ b3:{st:'급식 줄이 아주 길어요. {2:과} {1:은} 줄을 서서 기다리고 있어요.',s:[[2,'오늘 줄이 진짜 길다…'],[1,'조금 길어도 내 차례를 기다릴래.'],[2,'그래, 우리 같이 기다리자!']],tip:'줄 뒤에서 차분하게 서 있어요.'},
+ b4:{st:'{2:이} {1}의 연필로 글씨를 쓰고 있어요. {1:이} 다가가요.',s:[[2,'이 연필 글씨 잘 써진다.'],[1,'그 연필 내 거야. 돌려줄래?'],[2,'어? 미안해, 네 건 줄 몰랐어. 여기 있어.']],tip:'화내지 않고 또박또박 말해요.'},
+ b5:{st:'{1:과} {2:은} 보드게임을 했어요. {1:이} 지고 말았어요.',s:[[2,'내가 이겼다! 만세!'],[1,'아쉽다. 한 번 더 하자!'],[2,'좋아! 한 번 더 하자!']],tip:'속상해도 숨을 한 번 쉬고 말해요.'},
+ b6:{st:'{2:이} 실수로 {1}의 물통을 쏟았어요.',s:[[2,'앗 미안해 물통을 쏟았어'],[1,'괜찮아 같이 닦자'],[2,'이해해줘서 고마워 같이 닦자']],tip:'친구를 보며 부드럽게 말해요.'},
+ b7:{st:'수업 시간이에요. {2:이} 발표를 하고 있어요. {1:도} 말하고 싶어요.',s:[[2,'내 생각은 이거야.'],[1,'(손을 들고) 발표가 끝나면 나도 말할게.'],[2,'응, 그다음에 네가 말해 줘!']],tip:'손을 먼저 들고 기다려요.'},
+ b8:{st:'복도에서 {1:과} {2:이} 부딪혔어요.',s:[[2,'앗, 부딪혔네! 미안해.'],[1,'괜찮아? 나도 앞을 못 봤어.'],[2,'응, 괜찮아. 고마워!']],tip:'화난 얼굴 대신 걱정하는 표정으로 말해요.'},
+ b9:{st:'{2:이} 친구들과 술래잡기를 하고 있어요. {1:이} 다가가요.',s:[[2,'하나, 둘, 셋… 잡았다! 재밌다!'],[1,'나도 같이 해도 돼?'],[2,'좋아! 같이 하자!']],tip:'밝은 표정으로 대답을 기다려요.'},
+ b10:{st:'{2:이} {1}의 자리에 앉아 있어요. {1:이} 다가가요.',s:[[2,'정말 재밌다.'],[1,'여기 내 자리야. 비켜 줄래?'],[2,'미안해, 바로 비킬게.']],tip:'목소리를 낮추고 부드럽게 말해요.'},
+ b11:{st:'모둠에서 의견을 정하고 있어요. {2:의} 의견이 뽑혔어요.',s:[[2,'그럼 이번엔 내 의견으로 하자!'],[1,'알겠어. 다음엔 내 의견도 들어줄래?'],[2,'그래, 다음엔 꼭 들어 볼게!']],tip:'속상해도 숨을 쉬고 차분하게 말해요.'},
+ b12:{st:'{2:이} 빌려 간 {1}의 지우개를 아직 쓰고 있어요. {1:이} 다가가요.',s:[[2,'이 지우개 잘 지워진다.'],[1,'그 지우개 내 거야. 돌려줄래?'],[2,'앗, 빌린 걸 깜빡했어. 빌려줘서 고마워!']],tip:'웃으며 부드럽게 말해요.'},
+ b13:{st:'급식 시간에 {1:이} 실수로 {2}의 식판을 엎었어요.',s:[[2,'앗, 내 밥이!'],[1,'미안해, 내가 실수했어. 같이 치우자.'],[2,'괜찮아, 같이 치우자.']],tip:'실수를 인정하는 말이 먼저예요.'},
+ b14:{st:'체육 시간에 우리 팀이 졌어요. {2:이} 속상해하고 있어요.',s:[[2,'내가 실수해서 졌어…'],[1,'괜찮아, 수고했어. 다음엔 같이 잘해 보자.'],[2,'고마워! 다음엔 더 잘할게.']],tip:'친구를 토닥이듯 따뜻하게 말해요.'},
+ b15:{st:'{2:이} {1}의 별명을 부르며 놀리고 있어요. {1:이} 다가가요.',s:[[2,'야, 별명으로 부르면 재밌잖아.'],[1,'그 말은 싫어. 그만해 줄래?'],[2,'아, 미안해. 이제 안 그럴게.']],tip:'또박또박, 단호하지만 화내지 않고 말해요.'},
+ b16:{st:'교실 바닥에 쓰레기가 떨어져 있어요. {1:과} {2:이} 함께 보았어요.',s:[[2,'어? 바닥에 쓰레기가 있네.'],[1,'내가 버린 건 아니지만 내가 주울게.'],[2,'우와, 고마워! 나도 같이 도울게.']],tip:'몸으로 직접 주워 보는 동작을 해요.'},
+ b17:{st:'점심시간이에요. {2:이} 혼자 앉아 있어요. {1:이} 다가가요.',s:[[2,'(혼자 조용히 밥을 먹는다)'],[1,'같이 먹을래?'],[2,'좋아! 같이 먹자!']],tip:'친구 옆에 다가가 눈을 보고 말해요.'}
+};
+function getScript(s){
+  let lines,tip='천천히, 또박또박 말해요.',st=null;
+  if(s.script){lines=s.script;tip=s.tip||tip;st=s.stage||null}
+  else if(HINTS[s.id]){lines=HINTS[s.id].s;tip=HINTS[s.id].tip;st=HINTS[s.id].st}
+  else lines=[[2,'어떻게 할 거야?'],[1,s.good.act.replace(/[“”]/g,'')],[2,'좋아, 알겠어!']];
+  if(!st)st='{1:이} {2}에게 다가가요.';
+  if(!lines.some(l=>l[0]===0))lines=[lines[0],[0,PAUSE]].concat(lines.slice(1));
+  return {s:lines,tip,st};
+}
+/* 이름 뒤 조사 붙이기: {1:이} → 강민이 / 다솜이 / 지호가 */
+function hasBat(w){const c=w[w.length-1],k=c.charCodeAt(0);
+  if(k>=0xAC00&&k<=0xD7A3)return (k-0xAC00)%28!==0;
+  if(/[0-9]/.test(c))return '013678'.includes(c);return false}
+const JOSA={'이':['이','가'],'은':['은','는'],'과':['과','와'],'의':['의','의'],'도':['도','도']};
+function fill(t){return t.replace(/\{(\d)(?::([^}]+))?\}/g,(m,n,j)=>{
+  const name=nm(+n===2?2:1);if(!j)return name;const p=JOSA[j];return p?name+(hasBat(name)?p[0]:p[1]):name+j})}
+/* ---------- 저장(실패해도 동작) ---------- */
+const store={
+  get(k,d){try{const v=localStorage.getItem('hd_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('hd_'+k,JSON.stringify(v))}catch(e){}}
+};
+let custom=store.get('custom',[]), off=store.get('off',[]), gone=store.get('gone',[]);
+const $=id=>document.getElementById(id);
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
+const all=()=>BASE.filter(s=>!gone.includes(s.id)).concat(custom);
+const active=()=>all().filter(s=>!off.includes(s.id));
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600)}
+const smooth=()=>reduce?'auto':'smooth';
+function nm(n){const v=$(n===1?'r1':'r2').textContent;return v==='?'?(n===1?'역할 1':'역할 2'):v}
+/* 덱: 한 번씩 다 본 뒤에 다시 섞는다 */
+const decks={a1:{ids:[],last:null},a2:{ids:[],last:null}};
+function draw(name){
+  const d=decks[name],pool=active();
+  if(!pool.length){toast('뽑을 상황이 없어요. 상황 관리에서 체크해 주세요.');return null}
+  d.ids=d.ids.filter(id=>pool.some(s=>s.id===id));
+  if(!d.ids.length){
+    d.ids=shuffle(pool.map(s=>s.id));
+    if(d.ids.length>1&&d.ids[0]===d.last)d.ids.push(d.ids.shift());
+    if(d.last!==null)toast('모든 상황을 한 번씩 봤어요. 다시 섞었어요!');
+  }
+  const id=d.ids.shift();d.last=id;return pool.find(s=>s.id===id);
+}
+/* ---------- 얼굴 + 도미노 SVG ---------- */
+function face(m,cx,cy,r){
+  let s=`<circle class="skin" cx="${cx}" cy="${cy}" r="${r}"/>`;
+  const ex=r*.38,ey=cy-r*.08,my=cy+r*.45;
+  const dots=`<circle class="ff" cx="${cx-ex}" cy="${ey}" r="${r*.09}"/><circle class="ff" cx="${cx+ex}" cy="${ey}" r="${r*.09}"/>`;
+  const cheeks=`<circle class="cheek" cx="${cx-r*.62}" cy="${cy+r*.25}" r="${r*.14}"/><circle class="cheek" cx="${cx+r*.62}" cy="${cy+r*.25}" r="${r*.14}"/>`;
+  if(m==='q')return `<circle class="skin" cx="${cx}" cy="${cy}" r="${r}" style="opacity:.5"/><text x="${cx}" y="${cy+r*.36}" text-anchor="middle" font-size="${r*1.2}" font-weight="900" style="fill:#3b2a22;font-family:var(--f-display)">?</text>`;
+  if(m==='smile')return s+dots+cheeks+`<path class="fk" d="M${cx-r*.28} ${my-r*.12} q${r*.28} ${r*.34} ${r*.56} 0"/>`;
+  if(m==='happy')return s+`<path class="fk" d="M${cx-ex-r*.13} ${ey+r*.04} q${r*.13} ${-r*.22} ${r*.26} 0 M${cx+ex-r*.13} ${ey+r*.04} q${r*.13} ${-r*.22} ${r*.26} 0"/>`+cheeks+`<path d="M${cx-r*.3} ${my-r*.12} q${r*.3} ${r*.55} ${r*.6} 0z" fill="#c4423f" stroke="#3b2a22" stroke-width="2.5" stroke-linejoin="round"/>`;
+  if(m==='angry')return s+dots+cheeks+`<path class="fk" d="M${cx-ex-r*.2} ${ey-r*.26} l${r*.4} ${r*.14} M${cx+ex+r*.2} ${ey-r*.26} l${-r*.4} ${r*.14} M${cx-r*.26} ${my+r*.12} q${r*.26} ${-r*.3} ${r*.52} 0"/>`;
+  if(m==='sad')return s+dots+`<path class="fk" d="M${cx-ex-r*.2} ${ey-r*.1} l${r*.4} ${-r*.18} M${cx+ex+r*.2} ${ey-r*.1} l${-r*.4} ${-r*.18} M${cx-r*.22} ${my+r*.1} q${r*.22} ${-r*.28} ${r*.44} 0"/><path d="M${cx-ex} ${ey+r*.18} q${-r*.1} ${r*.22} 0 ${r*.3} q${r*.1} ${-r*.08} 0 ${-r*.3}" fill="#6ec1ff"/>`;
+  if(m==='shock')return s+`<circle class="fw" cx="${cx-ex}" cy="${ey}" r="${r*.2}"/><circle class="fw" cx="${cx+ex}" cy="${ey}" r="${r*.2}"/><circle class="ff" cx="${cx-ex}" cy="${ey}" r="${r*.07}"/><circle class="ff" cx="${cx+ex}" cy="${ey}" r="${r*.07}"/><ellipse cx="${cx}" cy="${my}" rx="${r*.12}" ry="${r*.17}" fill="#c4423f" stroke="#3b2a22" stroke-width="2"/>`;
+  if(m==='worry')return s+dots+`<path class="fk" d="M${cx-ex-r*.2} ${ey-r*.14} l${r*.4} ${-r*.16} M${cx+ex+r*.2} ${ey-r*.14} l${-r*.4} ${-r*.16} M${cx-r*.26} ${my} q${r*.09} ${-r*.1} ${r*.17} 0 t${r*.17} 0 t${r*.17} 0"/>`;
+  return s+dots+`<path class="fk" d="M${cx-r*.18} ${my-r*.04} h${r*.36}"/>`;
+}
+const PIPS=[[[50,112]],[[36,100],[64,124]],[[34,98],[50,112],[66,126]],[[36,100],[64,100],[36,126],[64,126]]];
+function tile(m,idx){
+  const pips=PIPS[idx%4].map(p=>`<circle class="pip" cx="${p[0]}" cy="${p[1]}" r="6"/>`).join('');
+  return `<svg viewBox="0 0 100 150" aria-hidden="true"><rect class="t-rect" x="4" y="4" width="92" height="142" rx="16"/><line class="t-mid" x1="14" y1="76" x2="86" y2="76"/>${face(m,50,40,25)}${pips}</svg>`;
+}
+/* ---------- 도미노 줄 ---------- */
+const LABELS=['내 행동','도미노 1','도미노 2','결과'];
+function buildRow(el){
+  el.innerHTML='';
+  for(let i=0;i<4;i++){
+    const w=document.createElement('div');w.className='tw idle';
+    w.innerHTML=`<div class="lab"></div><div class="tb">${tile('q',i)}</div><div class="cap"></div>`;
+    el.appendChild(w);
+  }
+}
+function setTile(el,i,kind,mood,text,label){
+  const w=el.children[i];
+  w.className='tw '+kind+(i===0?' first':'');
+  w.querySelector('.tb').innerHTML=tile(mood,i);
+  w.querySelector('.cap').textContent=text;
+  w.querySelector('.lab').textContent=label;
+}
+function resetRow(el){for(let i=0;i<4;i++){const w=el.children[i];w.className='tw idle';w.querySelector('.tb').innerHTML=tile('q',i);w.querySelector('.cap').textContent='';w.querySelector('.lab').textContent=''}}
+const cancel=el=>{if(el)el._tk=(el._tk||0)+1};
+const VERDICT={bad:'도미노가 와르르! 교실 분위기가 나빠졌어요',good:'도미노가 차곡차곡! 교실 분위기가 좋아져요'};
+/* bad는 하나씩 쓰러지고, good은 누워 있다가 하나씩 바로 선다 */
+async function play(el,side,kind,verdictEl,labEl,labText){
+  const my=el._tk=(el._tk||0)+1; const live=()=>my===el._tk;
+  if(labEl)labEl.textContent=labText;
+  verdictEl.innerHTML='';
+  if(!el.children.length)buildRow(el);
+  el.dataset.mode=kind;resetRow(el);await sleep(150);if(!live())return;
+  setTile(el,0,kind,'neutral',side.act,LABELS[0]);
+  await sleep(450);if(!live())return;
+  for(let i=0;i<3;i++){
+    el.children[i].classList.add('on');
+    await sleep(750);if(!live())return;
+    const [m,t]=side.chain[i];
+    setTile(el,i+1,kind,m,t,LABELS[i+1]);
+    await sleep(80);if(!live())return;
+  }
+  el.children[3].classList.add('on');
+  await sleep(500);if(!live())return;
+  verdictEl.innerHTML=`<div class="verdict ${kind}"></div>`;verdictEl.firstChild.textContent=VERDICT[kind];
+}
+/* ---------- 탭 / 안내 ---------- */
+let tab='a1',seen2=false;
+const veils={a1:'veil1',a2:'veil2'};
+function openIntro(t){const id=veils[t];if(!id)return;$(id).hidden=false;$(t==='a1'?'start1':'start2').focus()}
+function closeAll(){['veil1','veil2'].forEach(i=>$(i).hidden=true)}
+function showTab(id){
+  tab=id;
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===id)));
+  ['a1','a2','ad'].forEach(t=>$('p-'+t).hidden=t!==id);
+  store.set('tab',id);
+  if(id==='a2'&&!seen2){seen2=true;openIntro('a2')}
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+$('start1').addEventListener('click',closeAll);
+$('start2').addEventListener('click',closeAll);
+$('helpBtn').addEventListener('click',()=>openIntro(tab==='a2'?'a2':'a1'));
+function closeHint(){$('hveil').hidden=true;$('hintBtn').focus()}
+$('hclose').addEventListener('click',closeHint);
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if(!$('hveil').hidden)closeHint();else closeAll();
+});
+/* ---------- 활동 1 ---------- */
+let cur1=null,seen1=new Set(),order1=[];
+$('draw1').addEventListener('click',()=>{
+  const s=draw('a1');if(!s)return;
+  cur1=s;seen1=new Set();cancel($('row1'));
+  order1=shuffle(['bad','good']);
+  $('sit1').textContent=s.q;$('card1').hidden=false;$('stage1').hidden=true;$('compare1').hidden=true;
+  const box=$('choices1');box.innerHTML='';
+  order1.forEach((k,i)=>{
+    const b=document.createElement('button');b.type='button';b.className='choice';b.dataset.k=k;
+    b.innerHTML=`<span class="ab">${i?'B':'A'}</span><span class="tx"></span>`;
+    b.querySelector('.tx').textContent=s[k].act;
+    b.addEventListener('click',()=>pick1(k,b));box.appendChild(b);
+  });
+  $('card1').scrollIntoView({behavior:smooth(),block:'nearest'});
+});
+function pick1(k,btn){
+  document.querySelectorAll('#choices1 .choice').forEach(c=>c.classList.remove('sel'));
+  btn.classList.add('sel','seen');seen1.add(k);
+  $('stage1').hidden=false;
+  const letter=order1.indexOf(k)?'B':'A';
+  play($('row1'),cur1[k],k,$('verdict1'),$('stageLab1'),`선택 ${letter}를 하면 도미노가 이렇게 이어져요`).then(()=>{
+    if(seen1.size===2&&$('row1')._tk){
+      const li=x=>cur1[x].chain[2][1];
+      $('two1').innerHTML=`<div class="bad"><b>와르르 도미노</b><span></span></div><div class="good"><b>차곡차곡 도미노</b><span></span></div>`;
+      $('two1').children[0].lastChild.textContent=cur1.bad.act+' → '+li('bad');
+      $('two1').children[1].lastChild.textContent=cur1.good.act+' → '+li('good');
+      $('compare1').hidden=false;
+      $('compare1').scrollIntoView({behavior:smooth(),block:'nearest'});
+    }
+  });
+}
+/* ---------- 활동 2 ---------- */
+let cur2=null,actorsReady=false;
+const DEC=[['bad','나만 생각한 결정','나만 생각해서 하고 싶은 행동은? ','이렇게 행동하면 도미노가 쓰러져요'],
+           ['good','모두를 생각한 책임 있는 결정','모두를 생각한 책임 있는 행동은? ','이렇게 행동하면 도미노가 세워져요']];
+function buildDecisions(){
+  const host=$('decs');host.innerHTML='';
+  DEC.forEach(([k,title,lead,labText])=>{
+    const side=cur2[k];
+    const d=document.createElement('div');d.className='dec '+k;
+    d.innerHTML=`<button type="button" class="decbtn"></button>
+      <div class="decact"><span class="lead"></span><span class="blank">&nbsp;</span></div>
+      <div><button type="button" class="btn small go" hidden>예시 보기</button></div>
+      <div class="lab" hidden></div><div class="row compact" hidden></div><div class="vd"></div>`;
+    const decbtn=d.querySelector('.decbtn'),blank=d.querySelector('.blank'),go=d.querySelector('.go');
+    const lab=d.querySelector('.lab'),row=d.querySelector('.row'),vd=d.querySelector('.vd');
+    decbtn.textContent=title;d.querySelector('.lead').textContent=lead;
+    decbtn.addEventListener('click',()=>{
+      blank.className='ex';blank.textContent=side.act;go.hidden=false;decbtn.setAttribute('aria-pressed','true');
+    });
+    go.addEventListener('click',()=>{
+      lab.hidden=false;row.hidden=false;
+      play(row,side,k,vd,lab,labText);
+      d.scrollIntoView({behavior:smooth(),block:'nearest'});
+    });
+    host.appendChild(d);
+  });
+}
+function resetRole(){
+  actorsReady=false;
+  $('rpOpen').hidden=false;$('rpPanel').hidden=true;
+  $('r1').textContent='?';$('r2').textContent='?';$('actors').textContent='배우 등장!';
+  ['hintBtn','endRP'].forEach(i=>$(i).disabled=true);
+  $('again').hidden=true;$('aud').hidden=true;
+}
+$('draw2').addEventListener('click',()=>{
+  const s=draw('a2');if(!s)return;
+  document.querySelectorAll('#decs .row').forEach(cancel);
+  cur2=s;$('sit2').style.color='';$('sit2').textContent=s.q;
+  buildDecisions();resetRole();
+  $('ex2').hidden=false;$('rp2').hidden=false;
+});
+$('rpOpen').addEventListener('click',()=>{
+  $('rpOpen').hidden=true;$('rpPanel').hidden=false;
+  $('rpPanel').scrollIntoView({behavior:smooth(),block:'nearest'});
+});
+/* 배우 등장 */
+$('actors').addEventListener('click',async()=>{
+  let names=($('names').value||'').split(/\n/).map(x=>x.trim()).filter(Boolean);
+  if(names.length<2){const n=Math.max(2,Math.min(40,parseInt($('num').value)||10));names=Array.from({length:n},(_,i)=>(i+1)+'번')}
+  const b=$('actors');b.disabled=true;
+  const rnd=()=>names[Math.floor(Math.random()*names.length)];
+  if(!reduce)for(let i=0;i<10;i++){$('r1').textContent=rnd();$('r2').textContent=rnd();await sleep(90)}
+  const p=shuffle(names);$('r1').textContent=p[0];$('r2').textContent=p[1];
+  b.disabled=false;b.textContent='배우 다시 뽑기';
+  actorsReady=true;['hintBtn','endRP'].forEach(i=>$(i).disabled=false);
+});
+/* 역할극 힌트: 메신저 형식 */
+
+let hOpen=0;
+$('hintBtn').addEventListener('click',()=>{
+  if(!cur2)return;
+  const h=getScript(cur2),box=$('hbody');box.innerHTML='';const my=++hOpen;
+  const mk=([who,t])=>{
+    const d=document.createElement('div');d.className='hbub r'+who+' in';
+    d.innerHTML='<small></small><span></span>';
+    d.firstChild.textContent=nm(who===2?2:1);d.lastChild.textContent=t;return d;
+  };
+  const sb=document.createElement('div');sb.className='stagebox';
+  sb.innerHTML='<small>행동 안내</small><span></span>';sb.lastChild.textContent=fill(h.st);box.appendChild(sb);
+  const idx=h.s.findIndex(l=>l[0]===0);
+  const before=h.s.slice(0,idx),after=h.s.slice(idx+1);
+  before.forEach(l=>box.appendChild(mk(l)));
+  const pd=document.createElement('div');pd.className='hbub r0 in';
+  pd.innerHTML='<small></small><button type="button" class="pbub"></button>';
+  pd.firstChild.textContent=nm(1);
+  const pb=pd.lastChild;pb.textContent='잠시멈춤 눌러요';
+  box.appendChild(pd);
+  pb.addEventListener('click',async()=>{
+    pb.disabled=true;
+    for(const n of ['3','2','1']){pb.textContent=n;pb.classList.add('num');await sleep(800);if(my!==hOpen)return}
+    pb.classList.remove('num');pb.textContent='잠시멈춤 끝! 결과를 예상했어요';
+    for(const l of after){await sleep(600);if(my!==hOpen)return;box.appendChild(mk(l))}
+    await sleep(500);if(my!==hOpen)return;
+    const tp=document.createElement('div');tp.className='tip in';tp.textContent='연기 팁 · '+h.tip;box.appendChild(tp);
+  });
+  $('hveil').hidden=false;pb.focus();
+});
+/* 관객 질문 */
+const AQ=['역할 1 친구는 어떤 말과 행동으로 도미노를 바꿨나요?','도미노가 바뀌자 역할 2 친구의 기분은 어떻게 달라졌나요?','나라면 어떤 말을 했을까요?','교실 분위기는 어떻게 달라졌을까요?','처음 행동과 바꾼 행동은 무엇이 달랐나요?'];
+let aq=0;
+function nextQ(){$('audQ').textContent=AQ[aq%AQ.length];aq++}
+$('endRP').addEventListener('click',()=>{
+  $('endRP').disabled=true;$('again').hidden=false;nextQ();$('aud').hidden=false;
+  $('aud').scrollIntoView({behavior:smooth(),block:'nearest'});
+});
+$('again').addEventListener('click',()=>{
+  $('again').hidden=true;$('aud').hidden=true;$('endRP').disabled=false;
+  toast('다시 해 봐요! 다른 친구를 뽑아도 좋아요.');
+});
+$('audNext').addEventListener('click',nextQ);
+/* ---------- 상황 관리 ---------- */
+function delBtn(s){
+  const d=document.createElement('button');d.type='button';d.className='btn alt small';d.textContent='삭제';
+  let armed=false,tm;
+  d.addEventListener('click',()=>{
+    if(!armed){armed=true;d.textContent='정말 삭제?';d.style.background='var(--bad)';d.style.color='var(--on-bad)';
+      tm=setTimeout(()=>{armed=false;d.textContent='삭제';d.style.background='';d.style.color=''},3000);return}
+    clearTimeout(tm);
+    if(s.id.startsWith('c'))custom=custom.filter(x=>x.id!==s.id);else{gone=gone.concat(s.id);store.set('gone',gone)}
+    off=off.filter(x=>x!==s.id);store.set('custom',custom);store.set('off',off);
+    renderList();toast('상황을 삭제했어요.');
+  });
+  return d;
+}
+function renderList(){
+  const ul=$('list');ul.innerHTML='';
+  all().forEach(s=>{
+    const li=document.createElement('li');
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=!off.includes(s.id);cb.id='cb-'+s.id;cb.setAttribute('aria-label',s.q+' 사용');
+    cb.addEventListener('change',()=>{off=cb.checked?off.filter(x=>x!==s.id):off.concat(s.id);store.set('off',off);updCnt()});
+    const sp=document.createElement('span');sp.textContent=s.q;li.append(cb,sp);
+    if(s.id.startsWith('c')){const tg=document.createElement('span');tg.className='tag';tg.style.flex='none';tg.textContent='추가함';li.appendChild(tg)}
+    li.appendChild(delBtn(s));
+    ul.appendChild(li);
+  });
+  $('restore').hidden=!gone.length;
+  updCnt();
+}
+$('allOn').addEventListener('click',()=>{off=[];store.set('off',off);renderList()});
+$('allOff').addEventListener('click',()=>{off=all().map(s=>s.id);store.set('off',off);renderList()});
+$('restore').addEventListener('click',()=>{gone=[];store.set('gone',gone);renderList();toast('기본 상황을 되살렸어요.')});
+function updCnt(){$('cnt').textContent='(사용 '+active().length+' / 전체 '+all().length+')'}
+$('names').value=store.get('names','');$('num').value=store.get('num',10);
+$('names').addEventListener('input',()=>store.set('names',$('names').value));
+$('num').addEventListener('input',()=>store.set('num',$('num').value));
+$('addForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const v=id=>$(id).value.trim();
+  const ids=['f-q','f-ba','f-b1','f-b2','f-b3','f-ga','f-g1','f-g2','f-g3'];
+  if(ids.some(i=>!v(i))){$('formErr').hidden=false;return}
+  $('formErr').hidden=true;
+  custom.push({id:'c'+Date.now(),q:v('f-q'),
+    bad:{act:v('f-ba'),chain:[['shock',v('f-b1')],['angry',v('f-b2')],['sad',v('f-b3')]]},
+    good:{act:v('f-ga'),chain:[['smile',v('f-g1')],['happy',v('f-g2')],['happy',v('f-g3')]]},
+    script:(v('f-s1')&&v('f-s2')&&v('f-s3'))?[[2,v('f-s1')],[1,v('f-s2')],[2,v('f-s3')]]:null,stage:v('f-st')||null});
+  store.set('custom',custom);ids.concat(['f-st','f-s1','f-s2','f-s3']).forEach(i=>$(i).value='');renderList();toast('상황을 추가했어요!');
+});
+/* ---------- 시작 ---------- */
+renderList();
+const t0=store.get('tab','a1');const start=['a1','a2','ad'].includes(t0)?t0:'a1';
+showTab(start);
+if(start==='a1')openIntro('a1');
+})();
+</script>
+
+</html>
